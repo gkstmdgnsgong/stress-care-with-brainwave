@@ -1,0 +1,37 @@
+# Visual Studio files
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.pdb
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# Media files (대용량 파일은 Git LFS 사용 권장)
+*.mp4
+*.avi
+*.mov
+
+# IDE files
+.idea/
+*.sln.iml
+
+# NuGet
+packages/
+*.nupkg 
