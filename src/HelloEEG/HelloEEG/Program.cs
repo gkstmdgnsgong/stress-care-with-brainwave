@@ -3,22 +3,24 @@ using System.Media;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
-
 using System.IO;
 using System.IO.Ports;
 using System.Timers;
-
 using NeuroSky.ThinkGear;
 using NeuroSky.ThinkGear.Algorithms;
 using System.Runtime.InteropServices;
-
 using System.Collections;
-
-
-//using System.Wieeeeendows.Forms;
+using System.Text.Json;
 
 namespace HelloEEG
 {
+    public class AppSettings
+    {
+        public string ComPort { get; set; }
+        public string DataPath { get; set; }
+        public string LogPath { get; set; }
+    }
+
     class Program
     {
         [DllImport("coclib", CallingConvention = CallingConvention.Cdecl)]
@@ -53,11 +55,13 @@ namespace HelloEEG
         static double total = 0;  // 1초 동안 나온 256개의 주파수 값을 더하여 저장하는 변수
         static double hbeta = 0;  //hbeta wave 범위에 해당하는 65~150의 주파수를 더하여 저장하는 변수
 
+        private static AppSettings _settings;
+
         public static void Main(string[] args)
         {
-            //time = 5;
+            LoadSettings();
+            
             Console.WriteLine("Hello EEG!");
-            // Initialize a new Connector and add event handlers
             connector = new Connector();
             connector.DeviceConnected += new EventHandler(OnDeviceConnected);
             connector.DeviceConnectFail += new EventHandler(OnDeviceFail);
@@ -68,8 +72,8 @@ namespace HelloEEG
             heartRateRecovery = new HeartRateRecovery();
             heartRateAcceleration = new HeartRateAcceleration();
 
-            // Scan for devices
-            connector.ConnectScan("COM5");
+            // Scan for devices using configured COM port
+            connector.ConnectScan(_settings.ComPort);
 
             // Enable Energy level calculation
             // connector.StartEnergyLevel();
@@ -86,6 +90,30 @@ namespace HelloEEG
             // Close all open connections
             connector.Close();
             Environment.Exit(0);
+        }
+
+        private static void LoadSettings()
+        {
+            try
+            {
+                string jsonString = File.ReadAllText("AppSettings.json");
+                _settings = JsonSerializer.Deserialize<AppSettings>(jsonString);
+                
+                // Create directories if they don't exist
+                Directory.CreateDirectory(_settings.DataPath);
+                Directory.CreateDirectory(_settings.LogPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading settings: {ex.Message}");
+                Console.WriteLine("Using default settings...");
+                _settings = new AppSettings
+                {
+                    ComPort = "COM5",
+                    DataPath = "data",
+                    LogPath = "logs"
+                };
+            }
         }
 
         static void OnEKGPersonalizationEvent(object sender, EventArgs e)
@@ -245,12 +273,10 @@ namespace HelloEEG
                                   }
                               }*/
                         //폴더 생성
-                        string makeFolder_path = @"C:\Users\정민지\Desktop\";
-                        string folderName = makeFolder_path + "DB";
-                        DirectoryInfo f = new DirectoryInfo(folderName);
-                        f.Create();
+                        string dbPath = Path.Combine(_settings.DataPath, "DB");
+                        Directory.CreateDirectory(dbPath);
 
-                        StreamWriter wr = new StreamWriter(@"C:\Users\정민지\Desktop\DB\" + count + ".txt");
+                        StreamWriter wr = new StreamWriter(Path.Combine(dbPath, count + ".txt"));
                         count++;
 
                         double val = rp;
